@@ -35,15 +35,14 @@ function api(){
         d.then(data => {
             //Set timestamp
             const timestamp = new Date()
-            //Filter trains to ones with delays
+            //Filter trains to ones with delays                 trains                 timetable rows   if delays look for new ones
             let trainsWithDelays = data.data.currentlyRunningTrains.filter(t => t.timeTableRows.find(d => d.causes ? d.causes.find(c => {
                 const code = c.thirdCategoryCode ? c.thirdCategoryCode.code : c.detailedCategoryCode ? c.detailedCategoryCode.code : c.categoryCode.code
                 const id = (t.commuterLineid ? `(${t.commuterLineid})` : "") + t.trainType.name + " " + t.trainNumber + " " +  d.station.shortCode + " " + code
-                console.log(ids.find(i => i == id))
-                console.log(id)
                 if (!ids.find(i => i == id)) return true
                 else return null
             }): null))
+            console.log(trainsWithDelays.length, "trains with new delays")
             //Formatting train array
             trainsWithDelays = trainsWithDelays.map(t => {return {
                 number: t.trainNumber, 
@@ -65,7 +64,7 @@ function api(){
                         const code = c.thirdCategoryCode ? c.thirdCategoryCode.code : c.detailedCategoryCode ? c.detailedCategoryCode.code : c.categoryCode.code
                         const id = t.name + " " +  d.station.shortCode + " " + code
                         //if new delays
-                        if (ids.find(i => i == id)) return
+                        if (!ids.find(i => i == id)) {
                             //adding to id list (ids.json)
                             ids.push(id)
                             //adding to stats (delay counts by code) list (stats.json)
@@ -84,7 +83,7 @@ function api(){
                             }
                             //adding to recents list (recent.json)
                             recents[code] = timestamp.toISOString()
-                        
+                        }
                         //actual thing being added to the message
                         if (!notInteresting.find(type => type == code)) {
                             interestingCauses += delayCause(c)
@@ -502,7 +501,7 @@ function delayCause(c) {
         default:
             break;
     }
-    return `\n[1;${bg?bg+";":""}${color?color:37}m${c.thirdCategoryCode ? c.thirdCategoryCode.code : c.detailedCategoryCode.code}[0m`
+    return `[1;${bg?bg+";":""}${color?color:37}m${c.thirdCategoryCode ? c.thirdCategoryCode.code : c.detailedCategoryCode.code}[0m`
 }
 //Hex to [r,b,g]
 function hexToRgb(hex) {
@@ -576,7 +575,7 @@ Promise.all([
         console.log(`Logged in as ${client.user.tag}!`)
         interestingChannel = client.channels.cache.get(interestingDelayChannelId)
         allChannel = client.channels.cache.get(allDelayChannelId) 
-        console.log(allChannel)
+        api()
         setInterval(api,10000)
     })
     //Handling the read stats files from buffers
